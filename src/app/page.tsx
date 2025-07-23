@@ -54,22 +54,23 @@ export default function Home() {
           <div className="hidden md:flex space-x-6 text-white">
             <Link
               href="/about"
-              className="hover:text-blue-200 transition-all duration-300 hover:scale-110 transform"
+              className="inline-flex items-center justify-center px-6 py-3 text-sm font-semibold text-blue-900 bg-white rounded-full hover:bg-blue-50 transition-all duration-300 transform hover:scale-110 hover:-translate-y-1 shadow-lg hover:shadow-xl"
             >
-              Acerca de
+              <svg
+                className="w-4 h-4 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              Acerca del Volcán
             </Link>
-            <a
-              href="#stations"
-              className="hover:text-blue-200 transition-all duration-300 hover:scale-110 transform"
-            >
-              Estaciones
-            </a>
-            <a
-              href="#research"
-              className="hover:text-blue-200 transition-all duration-300 hover:scale-110 transform"
-            >
-              Investigación
-            </a>
           </div>
         </div>
       </nav>
