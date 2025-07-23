@@ -52,12 +52,12 @@ export default function Home() {
             Estación Antisana
           </div>
           <div className="hidden md:flex space-x-6 text-white">
-            <a
-              href="#about"
+            <Link
+              href="/about"
               className="hover:text-blue-200 transition-all duration-300 hover:scale-110 transform"
             >
               Acerca de
-            </a>
+            </Link>
             <a
               href="#stations"
               className="hover:text-blue-200 transition-all duration-300 hover:scale-110 transform"
