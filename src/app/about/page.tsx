@@ -13,17 +13,15 @@ export default function About() {
   }, []);
 
   const imageOpacity = Math.max(0.3, 1 - scrollY / 500);
-  const parallaxY = scrollY * 0.5;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 relative overflow-hidden">
       {/* Background Image with Parallax */}
       <div
-        className="fixed inset-0 bg-cover bg-center bg-no-repeat"
+        className="fixed inset-0 bg-cover bg-center bg-no-repeat bg-fixed"
         style={{
           backgroundImage: "url('/antisana.jpg')",
           opacity: imageOpacity,
-          transform: `translateY(${parallaxY}px)`,
         }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-slate-900/70 via-blue-900/50 to-slate-900/80"></div>
