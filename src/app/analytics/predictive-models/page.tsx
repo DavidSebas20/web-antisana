@@ -22,6 +22,12 @@ interface DataPoint {
   value: number;
 }
 
+interface CombinedDataPoint {
+  date: string;
+  historical: number | null;
+  prediction: number | null;
+}
+
 interface StationData {
   [key: string]: DataPoint[];
 }
@@ -36,6 +42,7 @@ interface PredictionResult {
   historical: DataPoint[];
   predictions: DataPoint[];
   seasonality: DataPoint[];
+  combinedChartData: CombinedDataPoint[];
 }
 
 interface ProphetModel {
@@ -266,6 +273,42 @@ export default function PredictiveModels() {
     return predictions;
   };
 
+  // Generar datos combinados para el gráfico principal
+  const generateCombinedChartData = (data: DataPoint[]) => {
+    const historical = data.slice(-24).map((d) => ({
+      date: format(parseISO(d.date), "MMM yyyy"),
+      historical: d.value,
+      prediction: null as number | null,
+    }));
+
+    const lastDate =
+      data.length > 0 ? parseISO(data[data.length - 1].date) : new Date();
+    const predictions = [];
+
+    for (let i = 1; i <= 12; i++) {
+      const futureDate = addMonths(lastDate, i);
+      const dateStr = format(futureDate, "yyyy-MM-dd");
+      const prophet = prophetPredict(data, dateStr);
+      const predictedValue = Math.max(
+        0,
+        prophet.trend + prophet.seasonal + prophet.residual
+      );
+
+      predictions.push({
+        date: format(futureDate, "MMM yyyy"),
+        historical: null as number | null,
+        prediction: predictedValue,
+      });
+    }
+
+    // Conectar el último punto histórico con el primer punto de predicción
+    if (historical.length > 0 && predictions.length > 0) {
+      predictions[0].historical = historical[historical.length - 1].historical;
+    }
+
+    return [...historical, ...predictions];
+  };
+
   // Generar estacionalidad
   const generateSeasonality = (data: DataPoint[]): DataPoint[] => {
     const seasonality: DataPoint[] = [];
@@ -336,6 +379,7 @@ export default function PredictiveModels() {
       const historical = generateHistoricalChart(stationData);
       const predictions = generateFuturePredictions(stationData);
       const seasonality = generateSeasonality(stationData);
+      const combinedChartData = generateCombinedChartData(stationData);
 
       const result: PredictionResult = {
         fecha: targetDate,
@@ -347,6 +391,7 @@ export default function PredictiveModels() {
         historical,
         predictions,
         seasonality,
+        combinedChartData,
       };
 
       setPredictions(result);
@@ -585,7 +630,7 @@ export default function PredictiveModels() {
                   </h3>
                   <div className="h-80">
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart>
+                      <LineChart data={predictions.combinedChartData}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                         <XAxis dataKey="date" stroke="#9CA3AF" />
                         <YAxis stroke="#9CA3AF" />
@@ -599,23 +644,23 @@ export default function PredictiveModels() {
                         />
                         <Legend />
                         <Line
-                          data={predictions.historical}
                           type="monotone"
-                          dataKey="value"
+                          dataKey="historical"
                           stroke="#8B5CF6"
                           strokeWidth={2}
                           name="Histórico"
                           dot={{ fill: "#8B5CF6", strokeWidth: 2 }}
+                          connectNulls={false}
                         />
                         <Line
-                          data={predictions.predictions}
                           type="monotone"
-                          dataKey="value"
+                          dataKey="prediction"
                           stroke="#10B981"
                           strokeWidth={2}
                           strokeDasharray="5 5"
                           name="Predicción"
                           dot={{ fill: "#10B981", strokeWidth: 2 }}
+                          connectNulls={false}
                         />
                       </LineChart>
                     </ResponsiveContainer>

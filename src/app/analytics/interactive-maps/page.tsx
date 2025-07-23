@@ -1,18 +1,52 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
+
+// Componente dinámico del mapa completo que maneja Leaflet
+const DynamicMap = dynamic(() => import("./MapComponent"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-full bg-gray-200">
+      <div className="text-gray-600">Cargando mapa...</div>
+    </div>
+  ),
+});
 
 export default function InteractiveMaps() {
   const [selectedStation, setSelectedStation] = useState("P42");
   const [mapView, setMapView] = useState("satellite");
+  const [isClient, setIsClient] = useState(false);
 
+  useEffect(() => {
+    setIsClient(true);
+
+    // Agregar estilos CSS para la animación de pulso
+    const style = document.createElement("style");
+    style.textContent = `
+      @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+      }
+      .custom-div-icon {
+        background: transparent !important;
+        border: none !important;
+      }
+    `;
+    document.head.appendChild(style);
+  }, []);
+
+  // Coordenadas actualizadas con las proporcionadas
   const stations = [
     {
       id: "P42",
       name: "P42-Antisana Ramón Huañuna",
       status: "Activa",
-      coords: "0°32'12\"S, 78°9'36\"W",
+      coords: "0°36'08\"S, 78°11'55\"W",
+      lat: -0.6022867145410288,
+      lng: -78.1986689291808,
       elevation: "4,250 m",
       lastReading: "2024-01-15 14:30",
       waterLevel: "2.35 m",
@@ -22,7 +56,9 @@ export default function InteractiveMaps() {
       id: "P43",
       name: "P43-Antisana Limboasi",
       status: "Activa",
-      coords: "0°28'45\"S, 78°11'22\"W",
+      coords: "0°35'37\"S, 78°12'30\"W",
+      lat: -0.5934839659614135,
+      lng: -78.20825370752031,
       elevation: "3,980 m",
       lastReading: "2024-01-15 14:32",
       waterLevel: "1.87 m",
@@ -32,7 +68,9 @@ export default function InteractiveMaps() {
       id: "P55",
       name: "P55-Antisana Diguchi",
       status: "Activa",
-      coords: "0°35'18\"S, 78°7'54\"W",
+      coords: "0°34'23\"S, 78°15'46\"W",
+      lat: -0.5731364867736277,
+      lng: -78.262844542214,
       elevation: "4,100 m",
       lastReading: "2024-01-15 14:28",
       waterLevel: "3.12 m",
@@ -40,13 +78,39 @@ export default function InteractiveMaps() {
     },
   ];
 
+  // Coordenadas del volcán Antisana
+  const volcanoCoords = {
+    lat: -0.4813239532557332,
+    lng: -78.14398105206119,
+  };
+
+  // Configuración de las diferentes vistas del mapa
   const mapViews = [
-    { id: "satellite", name: "Vista Satelital", icon: "🛰️" },
-    { id: "terrain", name: "Relieve", icon: "🏔️" },
-    { id: "hybrid", name: "Híbrido", icon: "🗺️" },
+    {
+      id: "satellite",
+      name: "Vista Satelital",
+      icon: "🛰️",
+      url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      attribution: "Tiles &copy; Esri",
+    },
+    {
+      id: "terrain",
+      name: "Relieve",
+      icon: "🏔️",
+      url: "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
+      attribution: "&copy; OpenTopoMap contributors",
+    },
+    {
+      id: "hybrid",
+      name: "Híbrido",
+      icon: "🗺️",
+      url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+      attribution: "&copy; OpenStreetMap contributors",
+    },
   ];
 
   const selectedStationData = stations.find((s) => s.id === selectedStation);
+  const currentMapView = mapViews.find((v) => v.id === mapView);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 animate-gradient-shift">
@@ -134,61 +198,22 @@ export default function InteractiveMaps() {
                 </h2>
               </div>
 
-              {/* Mock Map */}
-              <div className="relative h-96 lg:h-[500px] bg-gradient-to-br from-green-900 via-blue-900 to-brown-900 flex items-center justify-center">
-                {/* Volcano Icon */}
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                  <div className="text-6xl animate-float">🌋</div>
-                  <p className="text-white text-center mt-2 font-bold">
-                    Antisana
-                  </p>
-                </div>
+              {/* Real Leaflet Map */}
+              <div className="relative h-96 lg:h-[500px]">
+                {isClient && (
+                  <DynamicMap
+                    stations={stations}
+                    volcanoCoords={volcanoCoords}
+                    setSelectedStation={setSelectedStation}
+                    mapView={currentMapView || mapViews[0]}
+                  />
+                )}
 
-                {/* Station Markers */}
-                {stations.map((station) => (
-                  <div
-                    key={station.id}
-                    className={`absolute cursor-pointer transform hover:scale-125 transition-all duration-300 ${
-                      station.id === "P42"
-                        ? "top-1/4 left-1/3"
-                        : station.id === "P43"
-                        ? "top-2/3 right-1/3"
-                        : "bottom-1/4 left-1/2"
-                    }`}
-                    onClick={() => setSelectedStation(station.id)}
-                  >
-                    <div
-                      className={`relative ${
-                        selectedStation === station.id ? "z-10" : ""
-                      }`}
-                    >
-                      <div
-                        className={`w-4 h-4 rounded-full border-2 border-white animate-pulse ${
-                          station.status === "Activa"
-                            ? "bg-green-500"
-                            : "bg-red-500"
-                        }`}
-                      ></div>
-                      <div className="absolute top-5 left-1/2 transform -translate-x-1/2 bg-black/80 text-white px-2 py-1 rounded text-xs whitespace-nowrap">
-                        {station.id}
-                      </div>
-                      {selectedStation === station.id && (
-                        <div className="absolute top-8 left-1/2 transform -translate-x-1/2 bg-white/90 text-black p-2 rounded shadow-lg text-xs whitespace-nowrap animate-fade-in-up">
-                          <p className="font-bold">{station.name}</p>
-                          <p>Nivel: {station.waterLevel}</p>
-                        </div>
-                      )}
-                    </div>
+                {!isClient && (
+                  <div className="flex items-center justify-center h-full bg-gray-200">
+                    <div className="text-gray-600">Cargando mapa...</div>
                   </div>
-                ))}
-
-                {/* Coordinate Grid */}
-                <div className="absolute top-2 left-2 text-xs text-white/70">
-                  78°W - 0°S
-                </div>
-                <div className="absolute bottom-2 right-2 text-xs text-white/70">
-                  Escala: 1:50,000
-                </div>
+                )}
               </div>
             </div>
           </div>
